@@ -20,8 +20,13 @@ app.use(
 app.use(bodyParser.json());
 app.use(helmet()); // Add security headers
 
-// This allows the server to respond to the OPTIONS preflight request
-app.options("/send-email", cors());
+app.options("/send-email", (req, res) => {
+    console.log("Preflight request received");
+    res.header("Access-Control-Allow-Origin", "https://www.thebutterflymovement.health");
+    res.header("Access-Control-Allow-Methods", "GET,POST");
+    res.header("Access-Control-Allow-Headers", "Content-Type");
+    res.send();
+});
 
 // Nodemailer setup
 const transporter = nodemailer.createTransport({
@@ -60,6 +65,7 @@ app.post("/send-email", (req, res) => {
       res.status(500).send("Error sending email");
     } else {
       console.log("Email sent:", info.response);
+      res.header("Access-Control-Allow-Origin", "https://www.thebutterflymovement.health"); // Explicitly set header
       res.status(200).send("Email sent successfully!");
     }
   });
