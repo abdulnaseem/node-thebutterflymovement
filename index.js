@@ -37,6 +37,11 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+app.get("/test", (req, res) => {
+    res.header("Access-Control-Allow-Origin", "*"); // Allow all origins for debugging
+    res.send("Test endpoint is working!");
+});
+
 // Contact form submission
 app.post("/send-email", (req, res) => {
   const { name, subject, email, contactNumber, message } = req.body;
