@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 5000;
 // Allow requests only from your frontend
 app.use(
     cors({
-      origin: "https://www.thebutterflymovement.health", // Replace with your frontend URL
+      origin: "*", // Replace with your frontend URL
       methods: "GET,POST",
       allowedHeaders: "Content-Type",
     })
