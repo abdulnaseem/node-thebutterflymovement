@@ -20,6 +20,9 @@ app.use(
 app.use(bodyParser.json());
 app.use(helmet()); // Add security headers
 
+// This allows the server to respond to the OPTIONS preflight request
+app.options("/send-email", cors());
+
 // Nodemailer setup
 const transporter = nodemailer.createTransport({
   service: "gmail", // Use your email service (e.g., Gmail, Outlook)
