@@ -9,7 +9,14 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors()); // Allow requests from your frontend domain
+// Allow requests only from your frontend
+app.use(
+    cors({
+      origin: "http://192.168.1.247:5173", // Replace with your frontend URL
+      methods: "GET,POST",
+      allowedHeaders: "Content-Type",
+    })
+);
 app.use(bodyParser.json());
 app.use(helmet()); // Add security headers
 
