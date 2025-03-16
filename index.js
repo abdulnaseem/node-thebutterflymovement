@@ -19,7 +19,7 @@ app.use(
 );
 app.use(bodyParser.json());
 app.use(helmet()); // Add security headers
-
+//
 app.options("/send-email", (req, res) => {
     console.log("Preflight request received");
     res.header("Access-Control-Allow-Origin", "https://www.thebutterflymovement.health");
