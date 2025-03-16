@@ -1,0 +1,12 @@
+{
+    "headers": [
+      {
+        "source": "/(.*)",
+        "headers": [
+          { "key": "Access-Control-Allow-Origin", "value": "http://192.168.1.247:5173" },
+          { "key": "Access-Control-Allow-Methods", "value": "GET,POST" },
+          { "key": "Access-Control-Allow-Headers", "value": "Content-Type" }
+        ]
+      }
+    ]
+}
