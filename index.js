@@ -9,10 +9,14 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
+
 // Allow requests only from your frontend
 app.use(
     cors({
-      origin: "https://www.thebutterflymovement.health", // Replace with your frontend URL
+      origin: [
+        "https://www.thebutterflymovement.health",        
+        // "http://localhost:5173",
+      ],
       methods: "GET,POST",
       allowedHeaders: "Content-Type",
     })
@@ -37,44 +41,82 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-app.get("/test", (req, res) => {
-    res.header("Access-Control-Allow-Origin", "*"); // Allow all origins for debugging
-    res.send("Test endpoint is working!");
-});
-
 // Contact form submission
-app.post("/send-email", (req, res) => {
-  const { name, subject, email, contactNumber, message } = req.body;
+app.post("/send-email", async (req, res) => {
+  const { name, subject, email, contactNumber, message, recaptchaToken } = req.body;
 
-  // Input validation
+  // Basic input validation
   if (!name || !subject || !email || !contactNumber || !message) {
-    return res.status(400).send("All fields are required.");
+    return res.status(400).json({ message: "All fields are required." });
   }
 
-  const mailOptions = {
-    from: process.env.EMAIL_USER, // Your email address (from .env)
-    to: process.env.EMAIL_USER, // Recipient email (from .env)
-    subject: subject, // Subject from the form
-    text: `
-      Name: ${name}
-      Email: ${email}
-      Contact Number: ${contactNumber}
-      Message: ${message}
-    `,
-  };
+  if (!recaptchaToken) {
+    return res.status(400).json({ message: "reCAPTCHA validation failed." });
+  }
 
-  // Send the email
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.error("Error sending email:", error); // Log the full error for debugging
-      res.status(500).send("Error sending email");
-    } else {
-      console.log("Email sent:", info.response);
-      res.header("Access-Control-Allow-Origin", "https://www.thebutterflymovement.health"); // Explicitly set header
-      res.status(200).send("Email sent successfully!");
+  try {
+    // Verify reCAPTCHA with Google
+    const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+
+    const params = new URLSearchParams();
+    params.append("secret", secretKey);
+    params.append("response", recaptchaToken);
+
+    const googleRes = await fetch(
+      "https://www.google.com/recaptcha/api/siteverify",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: params.toString(),
+      }
+    );
+
+    const verification = await googleRes.json();
+
+    if (!verification.success) {
+      console.error("reCAPTCHA verification failed:", verification);
+      return res
+        .status(400)
+        .json({ message: "reCAPTCHA verification failed. Please try again." });
     }
-  });
+
+    // At this point the request is likely human.
+    // You can also inspect verification.score / action for v3.
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: process.env.EMAIL_USER,
+      subject: subject,
+      text: `
+        Name: ${name}
+        Email: ${email}
+        Contact Number: ${contactNumber}
+        Message: ${message}
+      `,
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error("Error sending email:", error);
+        return res.status(500).json({ message: "Error sending email" });
+      } else {
+        console.log("Email sent:", info.response);
+        res.header(
+          "Access-Control-Allow-Origin",
+          "https://www.thebutterflymovement.health",
+          // "http://localhost:5173"
+        );
+        return res.status(200).json({ message: "Email sent successfully!" });
+      }
+    });
+  } catch (err) {
+    console.error("Unexpected error:", err);
+    return res.status(500).json({ message: "Server error. Please try again." });
+  }
 });
+
 
 // Start the server
 app.listen(PORT, () => {
